@@ -158,7 +158,7 @@ tty.toggleLights = function() {
  * Window
  */
 
-function Window(socket) {
+function Window(socket, cwd) {
   var self = this;
 
   EventEmitter.call(this);
@@ -188,6 +188,7 @@ function Window(socket) {
   title.innerHTML = '';
 
   this.socket = socket || tty.socket;
+  this.cwd = cwd;
   this.element = el;
   this.grip = grip;
   this.bar = bar;
@@ -473,7 +474,7 @@ Window.prototype.each = function(func) {
 };
 
 Window.prototype.createTab = function() {
-  return new Tab(this, this.socket);
+  return new Tab(this, this.socket, this.cwd);
 };
 
 Window.prototype.highlight = function() {
@@ -515,11 +516,12 @@ Window.prototype.previousTab = function() {
  * Tab
  */
 
-function Tab(win, socket) {
+function Tab(win, socket, cwd) {
   var self = this;
 
   var cols = win.cols
-    , rows = win.rows;
+    , rows = win.rows
+    , cwd;
 
   Terminal.call(this, cols, rows);
 
@@ -543,12 +545,13 @@ function Tab(win, socket) {
   this.button = button;
   this.element = null;
   this.process = '';
+  this.dataRecieved = false;
   this.open();
   this.hookKeys();
 
   win.tabs.push(this);
 
-  this.socket.emit('create', cols, rows, function(err, data) {
+  this.socket.emit('create', cols, rows, cwd, function(err, data) {
     if (err) return self._destroy();
     self.pty = data.pty;
     self.id = data.id;
@@ -590,6 +593,11 @@ Tab.prototype._write = Tab.prototype.write;
 
 Tab.prototype.write = function(data) {
   if (this.window.focused !== this) this.button.style.color = 'red';
+
+  if (!this.dataRecieved) {
+    this.dataRecieved = true;
+    tty.emit('tab-ready');
+  }
   return this._write(data);
 };
 
@@ -642,6 +650,7 @@ Tab.prototype.__destroy = Tab.prototype.destroy;
 Tab.prototype._destroy = function() {
   if (this.destroyed) return;
   this.destroyed = true;
+  this.dataRecieved = false;
 
   var win = this.window;
 

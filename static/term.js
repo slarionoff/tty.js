@@ -1951,6 +1951,20 @@ Terminal.prototype.writeln = function(data) {
   this.write(data + '\r\n');
 };
 
+Terminal.prototype.sendString = function(string) {
+  var ev = {};
+  var len = string.length;
+  console.log(string);
+  for (var i=0; i<len; i++) {
+    ev.keyCode = string.charCodeAt(i);
+    console.log(ev);
+    this.keyDown(ev);
+    this.keyPress(ev);
+  }
+  ev.keyCode = 13;
+  this.keyDown(ev);
+}
+
 Terminal.prototype.keyDown = function(ev) {
   var key;
 
