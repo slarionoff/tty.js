@@ -525,7 +525,7 @@ function Tab(win, socket) {
 
   var button = document.createElement('div');
   button.className = 'tab';
-  button.innerHTML = '<i class="icon-folder-close"></i>';
+  //button.innerHTML = '<i class="icon-folder-close"></i>';
   win.bar.appendChild(button);
 
   on(button, 'click', function(ev) {
