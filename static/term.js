@@ -320,7 +320,6 @@ Terminal.prototype.focus = function() {
 
 Terminal.prototype.bindKeys = function() {
   if (Terminal.focus) return;
-  console.log(this);
 
   if (!Terminal.keysbound) {
     Terminal.keysbound = true;

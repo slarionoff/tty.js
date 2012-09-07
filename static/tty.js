@@ -80,7 +80,6 @@ tty.open = function() {
   tty.socket.on('kill', function(id) {
     if (!tty.terms[id]) return;
     tty.terms[id]._destroy();
-    console.log('kill');
   });
 
   tty.socket.on('sync', function(terms) {
@@ -180,7 +179,7 @@ function Window(socket) {
   bar.className = 'bar';
 
   button = document.createElement('div');
-  button.innerHTML = '~';
+  button.innerHTML = '<i class="icon-remove"></i>';
   button.title = 'new/close';
   button.className = 'tab';
 
@@ -231,9 +230,9 @@ Window.prototype.bind = function() {
 
   on(button, 'click', function(ev) {
     if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey) {
-      self.destroy();
-    } else {
       self.createTab();
+    } else {
+      self.destroy();
     }
     return cancel(ev);
   });
@@ -526,7 +525,7 @@ function Tab(win, socket) {
 
   var button = document.createElement('div');
   button.className = 'tab';
-  button.innerHTML = '\u2022';
+  button.innerHTML = '<i class="icon-folder-close"></i>';
   win.bar.appendChild(button);
 
   on(button, 'click', function(ev) {
@@ -558,7 +557,6 @@ function Tab(win, socket) {
     tty.emit('open tab', self);
     self.emit('open');
   });
-  console.log(tty);
 };
 
 inherits(Tab, Terminal);
