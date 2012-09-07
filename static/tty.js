@@ -60,32 +60,15 @@ tty.open = function() {
 
   tty.elements = {
     root: document.documentElement,
-    body: document.body,
-    h1: document.getElementsByTagName('h1')[0],
-    open: document.getElementById('open'),
-    lights: document.getElementById('lights')
+    body: document.body
   };
 
   root = tty.elements.root;
   body = tty.elements.body;
-  h1 = tty.elements.h1;
-  open = tty.elements.open;
-  lights = tty.elements.lights;
-
-  if (open) {
-    on(open, 'click', function() {
-      new Window;
-    });
-  }
-
-  if (lights) {
-    on(lights, 'click', function() {
-      tty.toggleLights();
-    });
-  }
 
   tty.socket.on('connect', function() {
     tty.reset();
+    //new Window;
     tty.emit('connect');
   });
 
@@ -97,34 +80,22 @@ tty.open = function() {
   tty.socket.on('kill', function(id) {
     if (!tty.terms[id]) return;
     tty.terms[id]._destroy();
+    console.log('kill');
   });
 
-  // XXX Clean this up.
   tty.socket.on('sync', function(terms) {
     console.log('Attempting to sync...');
     console.log(terms);
-
     tty.reset();
-
-    var emit = tty.socket.emit;
-    tty.socket.emit = function() {};
-
-    Object.keys(terms).forEach(function(key) {
-      var data = terms[key]
-        , win = new Window
-        , tab = win.tabs[0];
-
-      delete tty.terms[tab.id];
-      tab.pty = data.pty;
-      tab.id = data.id;
-      tty.terms[data.id] = tab;
-      win.resize(data.cols, data.rows);
-      tab.setProcessName(data.process);
-      tty.emit('open tab', tab);
-      tab.emit('open');
+    terms.forEach(function(term) {
+      var emit = tty.socket.emit;
+      tty.socket.emit = function() {};
+      var win = new Window;
+      Object.keys(term).forEach(function(key) {
+        win.tabs[0][key] = term[key];
+      });
+      tty.socket.emit = emit;
     });
-
-    tty.socket.emit = emit;
   });
 
   // We would need to poll the os on the serverside
@@ -587,6 +558,7 @@ function Tab(win, socket) {
     tty.emit('open tab', self);
     self.emit('open');
   });
+  console.log(tty);
 };
 
 inherits(Tab, Terminal);
@@ -695,12 +667,15 @@ Tab.prototype._destroy = function() {
   //   document.title = initialTitle;
   //   if (h1) h1.innerHTML = initialTitle;
   // }
+  this._events = null;
 
   this.__destroy();
+  this.blur();
 };
 
 Tab.prototype.destroy = function() {
   if (this.destroyed) return;
+
   this.socket.emit('kill', this.id);
   this._destroy();
   tty.emit('close tab', this);
@@ -901,9 +876,9 @@ function load() {
   tty.open();
 }
 
-on(document, 'load', load);
-on(document, 'DOMContentLoaded', load);
-setTimeout(load, 200);
+//on(document, 'load', load);
+//on(document, 'DOMContentLoaded', load);
+//setTimeout(load, 200);
 
 /**
  * Expose
