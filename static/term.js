@@ -1954,11 +1954,9 @@ Terminal.prototype.writeln = function(data) {
 Terminal.prototype.sendString = function(string) {
   var ev = {};
   var len = string.length;
-  console.log(string);
+  
   for (var i=0; i<len; i++) {
     ev.keyCode = string.charCodeAt(i);
-    console.log(ev);
-    this.keyDown(ev);
     this.keyPress(ev);
   }
   ev.keyCode = 13;
