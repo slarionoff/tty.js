@@ -15,7 +15,9 @@ var document = this.document
   , body
   , h1
   , open
-  , lights;
+  , lights
+  , previousHeight
+  , previousWidth;
 
 /**
  * Initial Document Title
@@ -59,7 +61,7 @@ tty.open = function() {
   tty.terms = {};
 
   tty.elements = {
-    root: document.documentElement,
+    root: document.getElementById('editor-output'),
     body: document.body
   };
 
@@ -83,8 +85,8 @@ tty.open = function() {
   });
 
   tty.socket.on('sync', function(terms) {
-    console.log('Attempting to sync...');
-    console.log(terms);
+    //console.log('Attempting to sync...');
+    //console.log(terms);
     tty.reset();
     terms.forEach(function(term) {
       var emit = tty.socket.emit;
@@ -167,7 +169,10 @@ function Window(socket, cwd) {
     , grip
     , bar
     , button
-    , title;
+    , title
+    , anchor;
+
+  anchor = document.getElementById('editor-output');
 
   el = document.createElement('div');
   el.className = 'window';
@@ -205,13 +210,16 @@ function Window(socket, cwd) {
   el.appendChild(bar);
   bar.appendChild(button);
   bar.appendChild(title);
-  body.appendChild(el);
+  anchor.appendChild(el);
 
   tty.windows.push(this);
 
   this.createTab();
   this.focus();
   this.bind();
+
+  previousHeight = root.clientHeight;
+  previousWidth = root.clientWidth;
 
   this.tabs[0].once('open', function() {
     tty.emit('open window', self);
@@ -252,11 +260,11 @@ Window.prototype.bind = function() {
     cancel(ev);
 
     if (new Date - last < 600) {
-      return self.maximize();
+      //return self.maximize();
     }
     last = new Date;
 
-    self.drag(ev);
+    //self.drag(ev);
 
     return cancel(ev);
   });
@@ -265,6 +273,7 @@ Window.prototype.bind = function() {
 Window.prototype.focus = function() {
   // Restack
   var parent = this.element.parentNode;
+
   if (parent) {
     parent.removeChild(this.element);
     parent.appendChild(this.element);
@@ -276,6 +285,13 @@ Window.prototype.focus = function() {
   tty.emit('focus window', this);
   this.emit('focus');
 };
+
+Window.prototype.blur = function() {
+  this.focused.blur();
+
+  tty.emit('blur window', this);
+  this.emit('blur');
+}
 
 Window.prototype.destroy = function() {
   if (this.destroyed) return;
@@ -337,8 +353,8 @@ Window.prototype.drag = function(ev) {
     self.emit('drag', ev);
   }
 
-  on(document, 'mousemove', move);
-  on(document, 'mouseup', up);
+  //on(document, 'mousemove', move);
+  //on(document, 'mouseup', up);
 };
 
 Window.prototype.resizing = function(ev) {
@@ -391,12 +407,12 @@ Window.prototype.resizing = function(ev) {
     off(document, 'mouseup', up);
   }
 
-  on(document, 'mousemove', move);
-  on(document, 'mouseup', up);
+  //on(document, 'mousemove', move);
+  //on(document, 'mouseup', up);
 };
 
-Window.prototype.maximize = function() {
-  if (this.minimize) return this.minimize();
+Window.prototype.maximize = function(termOffsetWidth, termOffsetHeight) {
+  //if (this.minimize) return this.minimize();
 
   var self = this
     , el = this.element
@@ -409,7 +425,7 @@ Window.prototype.maximize = function() {
     rows: term.rows,
     left: el.offsetLeft,
     top: el.offsetTop,
-    root: root.className
+    root: root.getAttribute('id')
   };
 
   this.minimize = function() {
@@ -433,15 +449,18 @@ Window.prototype.maximize = function() {
 
   window.scrollTo(0, 0);
 
-  x = root.clientWidth / term.element.offsetWidth;
-  y = root.clientHeight / term.element.offsetHeight;
+  x = root.clientWidth / previousWidth;
+  y = root.clientHeight / previousHeight;
   x = (x * term.cols) | 0;
   y = (y * term.rows) | 0;
 
-  el.style.left = '0px';
-  el.style.top = '0px';
-  el.style.width = '100%';
-  el.style.height = '100%';
+  previousHeight = root.clientHeight;
+  previousWidth = root.clientWidth;
+
+  el.style.left = '0';
+  el.style.top = '0';
+  el.style.bottom = '0';
+  el.style.right = '0';
   term.element.style.width = '100%';
   term.element.style.height = '100%';
   el.style.boxSizing = 'border-box';
@@ -511,6 +530,10 @@ Window.prototype.nextTab = function() {
 Window.prototype.previousTab = function() {
   return this.focusTab(false);
 };
+
+Window.prototype.removeFocus = function() {
+  return this.focusTab(false);
+}
 
 /**
  * Tab
@@ -632,6 +655,16 @@ Tab.prototype.focus = function() {
 
   win.focus();
 
+  tty.emit('focus tab', this);
+  this.emit('focus');
+};
+
+Tab.prototype._blur = Tab.prototype.focus;
+
+Tab.prototype.blur = function() {
+  var win = this.window;
+
+  Terminal.focus = undefined;
   tty.emit('focus tab', this);
   this.emit('focus');
 };
